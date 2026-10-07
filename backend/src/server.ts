@@ -20,7 +20,7 @@ app.use(
 app.use(express.json());
 app.use(requestLogger);
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 app.get("/", (req, res) => {
   res.json({
@@ -32,6 +32,6 @@ app.use("/api/sites", siteRoutes);
 app.use("/api/installations", installationRoutes);
 app.use("/api/summary", summaryRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });
