@@ -345,14 +345,16 @@ const Dashboard = () => {
 )}
 
       {/* Add Site */}
-      <SiteForm
-        onSiteCreated={(newSite) => {
-          setSites((currentSites) => [
-            newSite,
-            ...currentSites,
-          ]);
-        }}
-      />
+     <SiteForm
+  onSiteCreated={async (newSite) => {
+    setSites((currentSites) => [
+      newSite,
+      ...currentSites,
+    ]);
+
+    await refreshSummary();
+  }}
+/>
 
       {/* Edit Site */}
       {editingSite && (
