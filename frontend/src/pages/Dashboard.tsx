@@ -41,33 +41,47 @@ const Dashboard = () => {
   // Reference for edit form
   const editSiteFormRef = useRef<HTMLDivElement | null>(null);
 
-  // Refresh summary
+  // --------------------------------
+  // Refresh Summary
+  // --------------------------------
+
   const refreshSummary = async () => {
     try {
       const response = await getSummary();
       setSummary(response.data);
     } catch (error) {
-      console.error("Summary refresh error:", error);
+      console.error(
+        "Summary refresh error:",
+        error
+      );
     }
   };
 
-  // Load dashboard
+  // --------------------------------
+  // Load Dashboard
+  // --------------------------------
+
   useEffect(() => {
     const loadDashboard = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const [sitesResponse, summaryResponse] =
-          await Promise.all([
-            getSites(),
-            getSummary(),
-          ]);
+        const [
+          sitesResponse,
+          summaryResponse,
+        ] = await Promise.all([
+          getSites(),
+          getSummary(),
+        ]);
 
         setSites(sitesResponse.data);
         setSummary(summaryResponse.data);
       } catch (error) {
-        console.error("Dashboard loading error:", error);
+        console.error(
+          "Dashboard loading error:",
+          error
+        );
 
         setError(
           "Failed to load dashboard data."
@@ -80,7 +94,10 @@ const Dashboard = () => {
     loadDashboard();
   }, []);
 
-  // Scroll to edit form when editing starts
+  // --------------------------------
+  // Scroll to Edit Form
+  // --------------------------------
+
   useEffect(() => {
     if (editingSite) {
       editSiteFormRef.current?.scrollIntoView({
@@ -90,11 +107,16 @@ const Dashboard = () => {
     }
   }, [editingSite]);
 
-  // Filter sites
-  const filteredSites = useMemo(() => {
-    return sites.filter((site) => {
-      const searchText = search.toLowerCase();
+  // --------------------------------
+  // Filter Sites
+  // --------------------------------
 
+  const filteredSites = useMemo(() => {
+    const searchText = search
+      .toLowerCase()
+      .trim();
+
+    return sites.filter((site) => {
       const matchesSearch =
         site.name
           .toLowerCase()
@@ -118,7 +140,10 @@ const Dashboard = () => {
     statusFilter,
   ]);
 
-  // Start editing
+  // --------------------------------
+  // Start Editing
+  // --------------------------------
+
   const handleEdit = (site: Site) => {
     setEditingSite(site);
 
@@ -127,13 +152,17 @@ const Dashboard = () => {
     setEditStatus(site.status);
 
     setEditCreatedBy(
-      site.created_by !== null
+      site.created_by !== null &&
+        site.created_by !== undefined
         ? String(site.created_by)
         : ""
     );
   };
 
-  // Cancel editing
+  // --------------------------------
+  // Cancel Editing
+  // --------------------------------
+
   const handleCancelEdit = () => {
     setEditingSite(null);
 
@@ -143,7 +172,10 @@ const Dashboard = () => {
     setEditCreatedBy("");
   };
 
-  // Update site
+  // --------------------------------
+  // Update Site
+  // --------------------------------
+
   const handleUpdateSite = async (
     e: React.FormEvent
   ) => {
@@ -167,7 +199,7 @@ const Dashboard = () => {
     try {
       setUpdating(true);
 
-      const response = await updateSite(
+      await updateSite(
         editingSite.id,
         {
           name: editName.trim(),
@@ -179,26 +211,24 @@ const Dashboard = () => {
         }
       );
 
-      // Update site in UI
-      setSites((currentSites) =>
-        currentSites.map((site) =>
-          site.id === editingSite.id
-            ? {
-                ...site,
-                ...response.data,
-              }
-            : site
-        )
+      /*
+       * Refresh sites after update.
+       * This ensures created_by_name is
+       * available from GET /sites.
+       */
+      const sitesResponse =
+        await getSites();
+
+      setSites(
+        sitesResponse.data
       );
 
-      // Refresh dashboard summary
       await refreshSummary();
 
       alert(
         "Site updated successfully."
       );
 
-      // Close edit form
       handleCancelEdit();
     } catch (error) {
       console.error(
@@ -214,13 +244,17 @@ const Dashboard = () => {
     }
   };
 
-  // Delete site
+  // --------------------------------
+  // Delete Site
+  // --------------------------------
+
   const handleDelete = async (
     id: number
   ) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this site?"
-    );
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to delete this site?"
+      );
 
     if (!confirmed) {
       return;
@@ -235,7 +269,6 @@ const Dashboard = () => {
         )
       );
 
-      // Refresh summary after delete
       await refreshSummary();
 
       alert(
@@ -253,7 +286,10 @@ const Dashboard = () => {
     }
   };
 
+  // --------------------------------
   // Loading
+  // --------------------------------
+
   if (loading) {
     return (
       <div className="page-message">
@@ -262,7 +298,10 @@ const Dashboard = () => {
     );
   }
 
+  // --------------------------------
   // Error
+  // --------------------------------
+
   if (error) {
     return (
       <div className="page-message error">
@@ -288,73 +327,96 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Summary */}
-     {/* Summary */}
-{summary && (
-  <div className="summary-grid">
+      {/* Dashboard Summary */}
+      {summary && (
+        <div className="summary-grid">
 
-    <div className="summary-card">
-      <h3>Total Sites</h3>
-      <strong>{summary.totalSites}</strong>
-    </div>
+          <div className="summary-card">
+            <h3>Total Sites</h3>
+            <strong>
+              {summary.totalSites}
+            </strong>
+          </div>
 
-    <div className="summary-card">
-      <h3>Active Sites</h3>
-      <strong>{summary.activeSites}</strong>
-    </div>
+          <div className="summary-card">
+            <h3>Active Sites</h3>
+            <strong>
+              {summary.activeSites}
+            </strong>
+          </div>
 
-    <div className="summary-card">
-      <h3>Planned Sites</h3>
-      <strong>{summary.plannedSites}</strong>
-    </div>
+          <div className="summary-card">
+            <h3>Planned Sites</h3>
+            <strong>
+              {summary.plannedSites}
+            </strong>
+          </div>
 
-    <div className="summary-card">
-      <h3>Completed Sites</h3>
-      <strong>{summary.completedSites}</strong>
-    </div>
+          <div className="summary-card">
+            <h3>Completed Sites</h3>
+            <strong>
+              {summary.completedSites}
+            </strong>
+          </div>
 
-    <div className="summary-card">
-      <h3>Total Installations</h3>
-      <strong>
-        {summary.totalInstallations}
-      </strong>
-    </div>
+          <div className="summary-card">
+            <h3>Total Installations</h3>
+            <strong>
+              {summary.totalInstallations}
+            </strong>
+          </div>
 
-    <div className="summary-card">
-      <h3>Pending Installations</h3>
-      <strong>
-        {summary.pendingInstallations}
-      </strong>
-    </div>
+          <div className="summary-card">
+            <h3>Pending Installations</h3>
+            <strong>
+              {summary.pendingInstallations}
+            </strong>
+          </div>
 
-    <div className="summary-card">
-      <h3>In Progress Installations</h3>
-      <strong>
-        {summary.inProgressInstallations}
-      </strong>
-    </div>
+          <div className="summary-card">
+            <h3>In Progress Installations</h3>
+            <strong>
+              {summary.inProgressInstallations}
+            </strong>
+          </div>
 
-    <div className="summary-card">
-      <h3>Completed Installations</h3>
-      <strong>
-        {summary.completedInstallations}
-      </strong>
-    </div>
+          <div className="summary-card">
+            <h3>Completed Installations</h3>
+            <strong>
+              {summary.completedInstallations}
+            </strong>
+          </div>
 
-  </div>
-)}
+        </div>
+      )}
 
       {/* Add Site */}
-     <SiteForm
-  onSiteCreated={async (newSite) => {
-    setSites((currentSites) => [
-      newSite,
-      ...currentSites,
-    ]);
+      <SiteForm
+        onSiteCreated={async () => {
+          try {
+            /*
+             * Fetch fresh site data after
+             * creating a site.
+             *
+             * GET /sites returns
+             * created_by_name.
+             */
+            const response =
+              await getSites();
 
-    await refreshSummary();
-  }}
-/>
+            setSites(response.data);
+
+            await refreshSummary();
+          } catch (error) {
+            console.error(
+              "Failed to refresh sites after creation:",
+              error
+            );
+
+            await refreshSummary();
+          }
+        }}
+      />
 
       {/* Edit Site */}
       {editingSite && (
@@ -473,7 +535,7 @@ const Dashboard = () => {
 
             </div>
 
-            {/* Update */}
+            {/* Update Button */}
             <button
               type="submit"
               disabled={updating}
@@ -483,13 +545,14 @@ const Dashboard = () => {
                 : "Update Site"}
             </button>
 
-            {/* Cancel */}
+            {/* Cancel Button */}
             <button
               type="button"
               className="secondary-button"
               onClick={
                 handleCancelEdit
               }
+              disabled={updating}
             >
               Cancel
             </button>
@@ -550,6 +613,7 @@ const Dashboard = () => {
             </select>
 
           </div>
+
         </div>
 
         {/* Sites Table */}
@@ -594,11 +658,10 @@ const Dashboard = () => {
 
                       <td>
                         {site.created_by_name ||
-                          "N/A"}
+                          "-"}
                       </td>
 
                       <td>
-
                         <div className="action-buttons">
 
                           <button
@@ -626,7 +689,6 @@ const Dashboard = () => {
                           </button>
 
                         </div>
-
                       </td>
 
                     </tr>

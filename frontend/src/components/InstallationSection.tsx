@@ -35,7 +35,6 @@ interface InstallationSectionProps {
 const InstallationSection = ({
   onSummaryRefresh,
 }: InstallationSectionProps) => {
-
   const [installations, setInstallations] =
     useState<Installation[]>([]);
 
@@ -43,21 +42,15 @@ const InstallationSection = ({
     useState<Site[]>([]);
 
   // Form state
-  const [siteId, setSiteId] =
-    useState("");
-
+  const [siteId, setSiteId] = useState("");
   const [installationType, setInstallationType] =
     useState("");
-
   const [status, setStatus] =
     useState("Pending");
-
   const [assignedTo, setAssignedTo] =
     useState("");
-
   const [startDate, setStartDate] =
     useState("");
-
   const [completionDate, setCompletionDate] =
     useState("");
 
@@ -84,6 +77,12 @@ const InstallationSection = ({
 
   const [statusFilter, setStatusFilter] =
     useState("All");
+
+  // Pagination
+  const [currentPage, setCurrentPage] =
+    useState(1);
+
+  const itemsPerPage = 10;
 
   // Load installations and sites
   useEffect(() => {
@@ -131,11 +130,15 @@ const InstallationSection = ({
     }
   }, [editingInstallation]);
 
+  // Reset pagination when search/filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
+
   // Filter installations
   const filteredInstallations = useMemo(() => {
     return installations.filter(
       (installation) => {
-
         const searchText =
           search.toLowerCase();
 
@@ -167,6 +170,20 @@ const InstallationSection = ({
     search,
     statusFilter,
   ]);
+
+  // Pagination
+  const totalPages = Math.ceil(
+    filteredInstallations.length /
+      itemsPerPage
+  );
+
+  const paginatedInstallations =
+    filteredInstallations.slice(
+      (currentPage - 1) *
+        itemsPerPage,
+      currentPage *
+        itemsPerPage
+    );
 
   // CREATE
   const handleSubmit = async (
@@ -228,7 +245,6 @@ const InstallationSection = ({
       setMessage(
         "Installation created successfully."
       );
-
     } catch (error) {
       console.error(
         "Create installation error:",
@@ -238,7 +254,6 @@ const InstallationSection = ({
       setMessage(
         "Failed to create installation."
       );
-
     } finally {
       setSubmitting(false);
     }
@@ -248,7 +263,6 @@ const InstallationSection = ({
   const handleEdit = (
     installation: Installation
   ) => {
-
     setEditingInstallation(
       installation
     );
@@ -290,7 +304,6 @@ const InstallationSection = ({
 
   // CANCEL EDIT
   const handleCancelEdit = () => {
-
     setEditingInstallation(null);
 
     setSiteId("");
@@ -304,105 +317,102 @@ const InstallationSection = ({
   };
 
   // UPDATE
-// UPDATE
-const handleUpdate = async (
-  e: React.FormEvent
-) => {
-  e.preventDefault();
+  const handleUpdate = async (
+    e: React.FormEvent
+  ) => {
+    e.preventDefault();
 
-  if (!editingInstallation) {
-    return;
-  }
+    if (!editingInstallation) {
+      return;
+    }
 
-  if (!siteId || !installationType.trim()) {
-    setMessage(
-      "Site and installation type are required."
-    );
-    return;
-  }
+    if (
+      !siteId ||
+      !installationType.trim()
+    ) {
+      setMessage(
+        "Site and installation type are required."
+      );
 
-  try {
-    setSubmitting(true);
-    setMessage("");
+      return;
+    }
 
-    // Send updated data to backend
-    const response = await updateInstallation(
-      editingInstallation.id,
-      {
-        site_id: Number(siteId),
+    try {
+      setSubmitting(true);
+      setMessage("");
 
-        assigned_to: assignedTo
-          ? Number(assignedTo)
-          : null,
+      const response =
+        await updateInstallation(
+          editingInstallation.id,
+          {
+            site_id: Number(siteId),
 
-        installation_type:
-          installationType.trim(),
+            assigned_to: assignedTo
+              ? Number(assignedTo)
+              : null,
 
-        status,
+            installation_type:
+              installationType.trim(),
 
-        start_date:
-          startDate || null,
+            status,
 
-        completion_date:
-          completionDate || null,
-      }
-    );
+            start_date:
+              startDate || null,
 
-    console.log(
-      "Updated installation response:",
-      response.data
-    );
+            completion_date:
+              completionDate || null,
+          }
+        );
 
-    // Refresh installation list from database
-    const refreshed =
-      await getInstallations();
+      console.log(
+        "Updated installation response:",
+        response.data
+      );
 
-    console.log(
-      "Refreshed installations:",
-      refreshed.data
-    );
+      const refreshed =
+        await getInstallations();
 
-    setInstallations(
-      refreshed.data
-    );
+      console.log(
+        "Refreshed installations:",
+        refreshed.data
+      );
 
-    // Refresh dashboard summary
-    await onSummaryRefresh();
+      setInstallations(
+        refreshed.data
+      );
 
-    // Close edit mode
-    setEditingInstallation(null);
+      await onSummaryRefresh();
 
-    setSiteId("");
-    setInstallationType("");
-    setStatus("Pending");
-    setAssignedTo("");
-    setStartDate("");
-    setCompletionDate("");
+      setEditingInstallation(null);
 
-    setMessage(
-      "Installation updated successfully."
-    );
+      setSiteId("");
+      setInstallationType("");
+      setStatus("Pending");
+      setAssignedTo("");
+      setStartDate("");
+      setCompletionDate("");
 
-  } catch (error) {
-    console.error(
-      "Update installation error:",
-      error
-    );
+      setMessage(
+        "Installation updated successfully."
+      );
+    } catch (error) {
+      console.error(
+        "Update installation error:",
+        error
+      );
 
-    setMessage(
-      "Failed to update installation."
-    );
-
-  } finally {
-    setSubmitting(false);
-  }
-};
+      setMessage(
+        "Failed to update installation."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // DELETE
   const handleDelete = async (
     id: number
   ) => {
-
     const confirmed =
       window.confirm(
         "Are you sure you want to delete this installation?"
@@ -413,7 +423,6 @@ const handleUpdate = async (
     }
 
     try {
-
       await deleteInstallation(id);
 
       setInstallations(
@@ -429,9 +438,7 @@ const handleUpdate = async (
       setMessage(
         "Installation deleted successfully."
       );
-
     } catch (error) {
-
       console.error(
         "Delete installation error:",
         error
@@ -451,7 +458,6 @@ const handleUpdate = async (
         className="form-card"
         ref={editFormRef}
       >
-
         <h2>
           {editingInstallation
             ? "Edit Installation"
@@ -465,12 +471,10 @@ const handleUpdate = async (
               : handleSubmit
           }
         >
-
           <div className="form-grid">
 
             {/* Site */}
             <div className="form-group">
-
               <label>
                 Site
               </label>
@@ -483,7 +487,6 @@ const handleUpdate = async (
                   )
                 }
               >
-
                 <option value="">
                   Select site
                 </option>
@@ -498,14 +501,11 @@ const handleUpdate = async (
                     </option>
                   )
                 )}
-
               </select>
-
             </div>
 
             {/* Installation Type */}
             <div className="form-group">
-
               <label>
                 Installation Type
               </label>
@@ -522,12 +522,10 @@ const handleUpdate = async (
                   )
                 }
               />
-
             </div>
 
             {/* Status */}
             <div className="form-group">
-
               <label>
                 Status
               </label>
@@ -540,7 +538,6 @@ const handleUpdate = async (
                   )
                 }
               >
-
                 <option value="Pending">
                   Pending
                 </option>
@@ -552,14 +549,11 @@ const handleUpdate = async (
                 <option value="Completed">
                   Completed
                 </option>
-
               </select>
-
             </div>
 
             {/* Assigned To */}
             <div className="form-group">
-
               <label>
                 Assigned To
               </label>
@@ -572,7 +566,6 @@ const handleUpdate = async (
                   )
                 }
               >
-
                 <option value="">
                   Select technician
                 </option>
@@ -584,14 +577,11 @@ const handleUpdate = async (
                 <option value="4">
                   Divya S
                 </option>
-
               </select>
-
             </div>
 
             {/* Start Date */}
             <div className="form-group">
-
               <label>
                 Start Date
               </label>
@@ -605,12 +595,10 @@ const handleUpdate = async (
                   )
                 }
               />
-
             </div>
 
             {/* Completion Date */}
             <div className="form-group">
-
               <label>
                 Completion Date
               </label>
@@ -626,7 +614,6 @@ const handleUpdate = async (
                   )
                 }
               />
-
             </div>
 
           </div>
@@ -636,7 +623,6 @@ const handleUpdate = async (
             type="submit"
             disabled={submitting}
           >
-
             {submitting
               ? editingInstallation
                 ? "Updating..."
@@ -644,7 +630,6 @@ const handleUpdate = async (
               : editingInstallation
               ? "Update Installation"
               : "Add Installation"}
-
           </button>
 
           {/* Cancel */}
@@ -666,9 +651,7 @@ const handleUpdate = async (
               {message}
             </p>
           )}
-
         </form>
-
       </div>
 
       {/* INSTALLATION TABLE */}
@@ -678,7 +661,6 @@ const handleUpdate = async (
         <div className="section-header">
 
           <div>
-
             <h2>
               Installations
             </h2>
@@ -688,7 +670,6 @@ const handleUpdate = async (
                 filteredInstallations.length
               } installations
             </span>
-
           </div>
 
           {/* Search + Filter */}
@@ -713,7 +694,6 @@ const handleUpdate = async (
                 )
               }
             >
-
               <option value="All">
                 All Status
               </option>
@@ -729,9 +709,7 @@ const handleUpdate = async (
               <option value="Completed">
                 Completed
               </option>
-
             </select>
-
           </div>
 
         </div>
@@ -742,37 +720,24 @@ const handleUpdate = async (
           <table>
 
             <thead>
-
               <tr>
-
                 <th>ID</th>
-
                 <th>Site</th>
-
                 <th>Type</th>
-
                 <th>Status</th>
-
                 <th>Assigned To</th>
-
                 <th>Start Date</th>
-
                 <th>
                   Completion Date
                 </th>
-
                 <th>Actions</th>
-
               </tr>
-
             </thead>
 
             <tbody>
 
               {loading ? (
-
                 <tr>
-
                   <td
                     colSpan={8}
                     style={{
@@ -782,21 +747,16 @@ const handleUpdate = async (
                   >
                     Loading installations...
                   </td>
-
                 </tr>
-
-              ) : filteredInstallations.length >
+              ) : paginatedInstallations.length >
                 0 ? (
-
-                filteredInstallations.map(
+                paginatedInstallations.map(
                   (installation) => (
-
                     <tr
                       key={
                         installation.id
                       }
                     >
-
                       <td>
                         {
                           installation.id
@@ -846,7 +806,6 @@ const handleUpdate = async (
                       </td>
 
                       <td>
-
                         <div className="action-buttons">
 
                           <button
@@ -874,18 +833,12 @@ const handleUpdate = async (
                           </button>
 
                         </div>
-
                       </td>
-
                     </tr>
-
                   )
                 )
-
               ) : (
-
                 <tr>
-
                   <td
                     colSpan={8}
                     style={{
@@ -895,19 +848,71 @@ const handleUpdate = async (
                   >
                     No installations found.
                   </td>
-
                 </tr>
-
               )}
 
             </tbody>
 
           </table>
 
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="pagination">
+
+              <button
+                type="button"
+                disabled={
+                  currentPage === 1
+                }
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) => prev - 1
+                  )
+                }
+              >
+                Previous
+              </button>
+
+              {Array.from(
+                { length: totalPages },
+                (_, index) =>
+                  index + 1
+              ).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={
+                    currentPage === page
+                      ? "pagination-active"
+                      : ""
+                  }
+                  onClick={() =>
+                    setCurrentPage(page)
+                  }
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                disabled={
+                  currentPage === totalPages
+                }
+                onClick={() =>
+                  setCurrentPage(
+                    (prev) => prev + 1
+                  )
+                }
+              >
+                Next
+              </button>
+
+            </div>
+          )}
+
         </div>
-
       </div>
-
     </div>
   );
 };
